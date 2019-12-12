@@ -5,5 +5,6 @@ chex-game ("[the hex board game](https://en.wikipedia.org/wiki/Hex_(board_game))
 ## TODO:
 * Add a Makefile
 * more description
-* Make it more fun and complete.
+* Make it more fun and complete
+* tidy up the code
 * etc.
