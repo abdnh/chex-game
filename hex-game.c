@@ -19,7 +19,6 @@
 #define AL_BLACK al_map_rgb(0,0,0)
 #define AL_WHITE al_map_rgb(255,255,255)
 
-
 typedef enum cell_color {NEUTRAL = 0, RED, BLUE} cell_color;
 
 typedef struct hex_grid {
@@ -33,15 +32,15 @@ typedef struct hex_grid {
 
 
 #define DEF_GRID_SIZE 11
-struct wqu_node grid_sites[DEF_GRID_SIZE*DEF_GRID_SIZE+4];
-cell_color grid_cell_colors[DEF_GRID_SIZE*DEF_GRID_SIZE];
+static struct wqu_node grid_sites[DEF_GRID_SIZE*DEF_GRID_SIZE+4];
+static cell_color grid_cell_colors[DEF_GRID_SIZE*DEF_GRID_SIZE];
 
-hex_grid def_grid = {.grid.nodes = grid_sites, .grid.size = DEF_GRID_SIZE*DEF_GRID_SIZE+4, 
+static hex_grid def_grid = {.grid.nodes = grid_sites, .grid.size = DEF_GRID_SIZE*DEF_GRID_SIZE+4, 
 .grid.count = DEF_GRID_SIZE*DEF_GRID_SIZE+4,
 .size = DEF_GRID_SIZE, .cell_colors = grid_cell_colors 
 };
 
-void hex_def_grid_init(void) {
+static void hex_def_grid_init(void) {
 	
 	for(size_t i = 0; i < DEF_GRID_SIZE*DEF_GRID_SIZE+4; i++) {
 		grid_sites[i].id = i;
@@ -73,7 +72,7 @@ struct point {
    because I can't handle geometry :/
 */
 #define PI 3.141593f
-struct point pointy_hex_corner(struct point *center, float size, unsigned i) {
+static struct point pointy_hex_corner(const struct point *center, float size, unsigned i) {
 	
 	float angle_deg = 60.0f * i - 30.0f;
 	float angle_rad = PI / 180.0f * angle_deg;
@@ -82,7 +81,7 @@ struct point pointy_hex_corner(struct point *center, float size, unsigned i) {
 	
 }
 
-void draw_filled_hexagon(float x, float y, float r, ALLEGRO_COLOR color) {
+static void draw_filled_hexagon(float x, float y, float r, ALLEGRO_COLOR color) {
 	
 	float vertices[22];
 	
@@ -104,7 +103,7 @@ void draw_filled_hexagon(float x, float y, float r, ALLEGRO_COLOR color) {
 	al_draw_filled_polygon(vertices, (sizeof(vertices)/sizeof(float))/2, color);
 }
 
-void draw_hexagon(float x, float y, float r, ALLEGRO_COLOR color) {
+static void draw_hexagon(float x, float y, float r, ALLEGRO_COLOR color) {
 	
 	float vertices[24];
 	
@@ -141,7 +140,7 @@ void draw_hexagon(float x, float y, float r, ALLEGRO_COLOR color) {
 #define CELL_X(h_offset, cell_width, i, j) ((h_offset) + (cell_width) * (j) + (cell_width)/2.0f * (i))
 #define CELL_Y(v_offset, cell_height, i) ((v_offset) + 0.75f * (cell_height) * (i))
 
-void hex_grid_draw(ALLEGRO_DISPLAY *display, hex_grid *g) {
+static void hex_grid_draw(ALLEGRO_DISPLAY *display, const hex_grid *g) {
 	
 	const float width = GRID_REGION_WIDTH(display);
 	const float height = GRID_REGION_HEIGHT(display);
@@ -217,7 +216,9 @@ void hex_grid_draw(ALLEGRO_DISPLAY *display, hex_grid *g) {
 	
 }
 
-size_t get_cell_index_from_mouse_coordinates(ALLEGRO_DISPLAY *display, hex_grid *g, int x, int y) {
+static size_t get_cell_index_from_mouse_coordinates(ALLEGRO_DISPLAY *display, 
+													const hex_grid *g, 
+													int x, int y) {
 	
 	const float width = GRID_REGION_WIDTH(display);
 	const float height = GRID_REGION_HEIGHT(display);
@@ -228,21 +229,20 @@ size_t get_cell_index_from_mouse_coordinates(ALLEGRO_DISPLAY *display, hex_grid 
 	const float cell_height = CELL_HEIGHT(cell_size);
 	
 	float i_f = ((float)y - v_offset) / CELL_Y(0, cell_height, 1);
-	size_t i = llroundf(i_f);
+	size_t i = (size_t) llroundf(i_f);
 	float j_f = ((float)x - h_offset - (cell_width)/2.0f * i_f) / CELL_X(0, cell_width, 0, 1);
-	size_t j = llroundf(j_f);
+	size_t j = (size_t) llroundf(j_f);
 	//printf("i_f : %f , j_f : %f , i : %zu , j : %zu\n", i_f, j_f, i, j);
 	if(i < g->size && j < g->size) {
 		return i * g->size + j;
 	}
-	return -1;
+	return (size_t)-1;
 }
 
 #define HEXGAME_FIRST_PLAYER RED
-cell_color current_color = HEXGAME_FIRST_PLAYER;
+static cell_color current_color = HEXGAME_FIRST_PLAYER;
 
-/* FIXME: Need more testing */
-void open_cell(hex_grid *g, size_t i) {
+static void open_cell(hex_grid *g, size_t i) {
 	
 	assert(i < g->size * g->size);
 	
@@ -302,7 +302,7 @@ void open_cell(hex_grid *g, size_t i) {
 	
 }
 
-cell_color get_winner(hex_grid *g) {
+static cell_color get_winner(hex_grid *g) {
 	
 	size_t red_idx = RED_VIRTUAL_CELLS_START(g);
 	if(w_quickunion_is_connected(&g->grid, red_idx, red_idx+1)) return RED;
@@ -311,9 +311,10 @@ cell_color get_winner(hex_grid *g) {
 	return NEUTRAL;
 }
 
-void show_winner(ALLEGRO_DISPLAY *display, 
-				ALLEGRO_FONT *font, ALLEGRO_FONT *font_big, 
-				cell_color winner) {
+static void show_winner(ALLEGRO_DISPLAY *display, 
+						ALLEGRO_FONT *font, 
+						ALLEGRO_FONT *font_big, 
+						cell_color winner) {
 	
 	if(winner == BLUE) {
 		al_draw_text(font_big, AL_BLUE, 
@@ -336,7 +337,9 @@ void show_winner(ALLEGRO_DISPLAY *display,
 		
 }
 
-void show_current_player(ALLEGRO_DISPLAY *display, ALLEGRO_FONT *font, cell_color player) {
+static void show_current_player(ALLEGRO_DISPLAY *display, 
+								ALLEGRO_FONT *font, 
+								cell_color player) {
 	
 	if(player == BLUE) {
 		al_draw_text(font, AL_BLUE, 
@@ -365,7 +368,7 @@ struct hexgame_state {
 #define HEXGAME_FLIP_FLAG(flags, member) ((flags).member = ~(flags).member)
 
 
-int main(int argc, char **argv) {
+int main(void) {
 
 	al_init();
 	al_init_primitives_addon();

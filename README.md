@@ -10,7 +10,7 @@ chex-game ("[the hex board game](https://en.wikipedia.org/wiki/Hex_(board_game))
 
 
 ## Credit:
-* A huge thanks to the author of this [elegantly written guide](https://www.redblobgames.com/grids/hexagons/)
+* A huge thanks to the author of this [elegantly written guide](https://www.redblobgames.com/grids/hexagons/) about hexagonal grids
 * Font is taken from https://www.dafont.com/vcr-osd-mono.font
 * The [Allegro](https://liballeg.org/) game programming library
 * This [coursera course](https://www.coursera.org/learn/algorithms-part1/) about algorithms and data structures
