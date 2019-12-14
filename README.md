@@ -3,8 +3,8 @@ chex-game ("[the hex board game](https://en.wikipedia.org/wiki/Hex_(board_game))
 
 
 ## TODO:
-* Add a Makefile
+* Add a build script
 * more description
-* Make it more fun and complete
+* Make it more complete
 * tidy up the code
 * etc.
