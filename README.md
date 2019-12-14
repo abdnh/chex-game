@@ -3,8 +3,14 @@ chex-game ("[the hex board game](https://en.wikipedia.org/wiki/Hex_(board_game))
 
 
 ## TODO:
-* Add a build script
 * more description
-* Make it more complete
+* Make it more complete (swap rule?)
 * tidy up the code
 * etc.
+
+
+## Credit:
+* A huge thanks to the author of this [elegantly written guide](https://www.redblobgames.com/grids/hexagons/)
+* Font is taken from https://www.dafont.com/vcr-osd-mono.font
+* The [Allegro](https://liballeg.org/) game programming library
+* This [coursera course](https://www.coursera.org/learn/algorithms-part1/) about algorithms and data structures

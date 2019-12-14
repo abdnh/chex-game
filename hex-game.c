@@ -1,22 +1,3 @@
-/* https://en.wikipedia.org/wiki/Hex_(board_game) */
-
-/* 
-A huge thanks to the author of this brilliant guide:
-https://www.redblobgames.com/grids/hexagons/
-
-*/
-
-/* TODO:
-- swap rule ?
-
-*/
-
-/*
-compile:
-gcc -o hex-game hex-game.c weighted-quick-union.c -lallegro -lallegro_primitives -lallegro_font -lallegro_ttf -lallegro_image
-
-*/
-
 #include <stdlib.h>
 //#include <stdio.h>
 #include <math.h>
@@ -276,11 +257,11 @@ void open_cell(hex_grid *g, size_t i) {
 	
 	size_t neighbors[6];
 	neighbors[0] = i - g->size;
-	neighbors[1] = (x != (g->size - 1) ? (i - g->size + 1) : -1);
-	neighbors[2] = (x != (g->size-1) ? (i + 1) : -1);
+	neighbors[1] = (x != (g->size - 1) ? (i - g->size + 1) : (size_t)-1);
+	neighbors[2] = (x != (g->size-1) ? (i + 1) : (size_t)-1);
 	neighbors[3] = i + g->size;
-	neighbors[4] = (x != 0 ? (i + g->size - 1) : -1);
-	neighbors[5] = (x != 0 ? (i - 1) : -1);
+	neighbors[4] = (x != 0 ? (i + g->size - 1) : (size_t)-1);
+	neighbors[5] = (x != 0 ? (i - 1) : (size_t)-1);
 	
 	for(size_t n = 0; n < 6; n++) {
 		if(neighbors[n] < g->size * g->size && 
@@ -463,7 +444,7 @@ int main(int argc, char **argv) {
 				//printf("left mouse button clicked on x: %d , y: %d\n", event.mouse.x, event.mouse.y);
 				size_t i = get_cell_index_from_mouse_coordinates(display, &def_grid, 
 						event.mouse.x, event.mouse.y);			
-				if(i != -1) {
+				if(i != (size_t)-1) {
 					open_cell(&def_grid, i);
 					winner = get_winner(&def_grid);
 					if(winner == RED) {

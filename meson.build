@@ -15,8 +15,8 @@ deps += cc.find_library('allegro_ttf')
 deps += cc.find_library('allegro_image')
 
 
-configure_file(input: 'assets/icon.png', output: 'icon.png', copy: true)
-configure_file(input: 'assets/VCR_OSD_MONO_1.001.ttf', output: 'VCR_OSD_MONO_1.001.ttf', copy: true)
+configure_file(input: 'icon.png', output: 'icon.png', copy: true)
+configure_file(input: 'VCR_OSD_MONO_1.001.ttf', output: 'VCR_OSD_MONO_1.001.ttf', copy: true)
 
 
 executable('chex-game', src, dependencies: deps)			
