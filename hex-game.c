@@ -13,7 +13,7 @@ https://www.redblobgames.com/grids/hexagons/
 
 /*
 compile:
-gcc -o hex-game hex-game.c weighted-quick-union.c -lallegro -lallegro_dialog -lallegro_primitives -lallegro_font -lallegro_ttf -lallegro_image
+gcc -o hex-game hex-game.c weighted-quick-union.c -lallegro -lallegro_primitives -lallegro_font -lallegro_ttf -lallegro_image
 
 */
 
@@ -397,15 +397,15 @@ int main(int argc, char **argv) {
 	ALLEGRO_DISPLAY* display = al_create_display(600, 500);
 	ALLEGRO_TIMER* timer = al_create_timer(1.0 / 30.0);
 	ALLEGRO_EVENT_QUEUE* queue = al_create_event_queue();
-	ALLEGRO_FONT *font = al_load_ttf_font("assets/VCR_OSD_MONO_1.001.ttf", 16, 0);
+	ALLEGRO_FONT *font = al_load_ttf_font("VCR_OSD_MONO_1.001.ttf", 16, 0);
 	if(!font) {
 		font = al_create_builtin_font();
 	}
-	ALLEGRO_FONT *font_big = al_load_ttf_font("assets/VCR_OSD_MONO_1.001.ttf", 32, 0);
+	ALLEGRO_FONT *font_big = al_load_ttf_font("VCR_OSD_MONO_1.001.ttf", 32, 0);
 	if(!font_big) {
 		font_big = font;
 	}
-	ALLEGRO_BITMAP *icon = al_load_bitmap("assets/icon.png");
+	ALLEGRO_BITMAP *icon = al_load_bitmap("icon.png");
 	if(icon) {
 		al_set_display_icon(display, icon);
 	}
@@ -495,12 +495,6 @@ int main(int argc, char **argv) {
 			HEXGAME_FLAG_OFF(game_state, redraw);
 		}
 	}
-	/*
-	al_shutdown_primitives_addon();
-	al_destroy_display(display);
-	al_destroy_timer(timer);
-	al_destroy_event_queue(queue);
-	*/
 	
 	return 0;
 }
