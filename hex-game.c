@@ -1,7 +1,8 @@
 #include <stdlib.h>
-//#include <stdio.h>
+#include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <stdbool.h>
 #include <assert.h>
 
 #include <allegro5/allegro.h>
@@ -31,7 +32,7 @@ typedef struct hex_grid {
 #define BLUE_VIRTUAL_CELLS_START(g) (RED_VIRTUAL_CELLS_START((g)) + 2)
 
 
-#define DEF_GRID_SIZE 11
+#define DEF_GRID_SIZE 19
 static struct wqu_node grid_sites[DEF_GRID_SIZE*DEF_GRID_SIZE+4];
 static cell_color grid_cell_colors[DEF_GRID_SIZE*DEF_GRID_SIZE];
 
@@ -40,13 +41,13 @@ static hex_grid def_grid = {.grid.nodes = grid_sites, .grid.size = DEF_GRID_SIZE
 .size = DEF_GRID_SIZE, .cell_colors = grid_cell_colors 
 };
 
-static void hex_def_grid_init(void) {
+static void hex_def_grid_init() {
 	
-	for(size_t i = 0; i < DEF_GRID_SIZE*DEF_GRID_SIZE+4; i++) {
+	for(size_t i = 0; i < def_grid.size*def_grid.size+4; i++) {
 		grid_sites[i].id = i;
 		grid_sites[i].size = 1;
 	}
-	memset(grid_cell_colors, 0, sizeof(cell_color) * DEF_GRID_SIZE*DEF_GRID_SIZE);
+	memset(grid_cell_colors, 0, sizeof(cell_color) * def_grid.size * def_grid.size);
 }
 
 /*
@@ -128,14 +129,17 @@ static void draw_hexagon(float x, float y, float r, ALLEGRO_COLOR color) {
 }
 
 
-#define GRID_REGION_WIDTH(display) (al_get_display_width(display) * 0.9f)
-#define GRID_REGION_HEIGHT(display) (al_get_display_height(display) * 0.9f)
+#define GRID_REGION_WIDTH(display) (al_get_display_width(display))
+#define GRID_REGION_HEIGHT(display) (al_get_display_height(display))
 
 #define SQRT_3 1.732051f
-#define H_OFFSET(grid_size, width) ((width) / (grid_size) * 1.5f)
+#define H_OFFSET(grid_size, width) ((width) / (grid_size * 1.5f))
 #define V_OFFSET(grid_size, height) ((height) / (grid_size))
-#define CELL_SIZE(grid_size, width, h_offset) (0.5f * ((width) - (h_offset) * 2) / (grid_size))
-#define CELL_WIDTH(cell_size) ((cell_size) * SQRT_3)
+//#define CELL_SIZE(grid_size, width, h_offset) (((width) - (h_offset) * 2) / (grid_size * 2.0f))
+//#define CELL_WIDTH(cell_size) ((cell_size) * SQRT_3)
+#define CELL_WIDTH(grid_size, width, h_offset) (((width) - (h_offset) * 2) / (grid_size * 1.5f))
+#define CELL_SIZE(cell_width) ((cell_width) / SQRT_3)
+
 #define CELL_HEIGHT(cell_size) ((cell_size) * 2.0f)
 #define CELL_X(h_offset, cell_width, i, j) ((h_offset) + (cell_width) * (j) + (cell_width)/2.0f * (i))
 #define CELL_Y(v_offset, cell_height, i) ((v_offset) + 0.75f * (cell_height) * (i))
@@ -146,8 +150,11 @@ static void hex_grid_draw(ALLEGRO_DISPLAY *display, const hex_grid *g) {
 	const float height = GRID_REGION_HEIGHT(display);
 	const float h_offset = H_OFFSET(g->size, width);
 	const float v_offset = V_OFFSET(g->size, height);
-	const float cell_size = CELL_SIZE(g->size, width, h_offset);
-	const float cell_width = CELL_WIDTH(cell_size);
+	//const float cell_size = CELL_SIZE(g->size, width, h_offset);
+	//const float cell_width = CELL_WIDTH(cell_size);
+	const float cell_width = CELL_WIDTH(g->size, width, h_offset);
+	const float cell_size = CELL_SIZE(cell_width);
+	
 	const float cell_height = CELL_HEIGHT(cell_size);
 	
 	/* grid borders */
@@ -224,8 +231,10 @@ static size_t get_cell_index_from_mouse_coordinates(ALLEGRO_DISPLAY *display,
 	const float height = GRID_REGION_HEIGHT(display);
 	const float h_offset = H_OFFSET(g->size, width);
 	const float v_offset = V_OFFSET(g->size, height);
-	const float cell_size = CELL_SIZE(g->size, width, h_offset);
-	const float cell_width = CELL_WIDTH(cell_size);
+	//const float cell_size = CELL_SIZE(g->size, width, h_offset);
+	//const float cell_width = CELL_WIDTH(cell_size);
+	const float cell_width = CELL_WIDTH(g->size, width, h_offset);
+	const float cell_size = CELL_SIZE(cell_width);
 	const float cell_height = CELL_HEIGHT(cell_size);
 	
 	float i_f = ((float)y - v_offset) / CELL_Y(0, cell_height, 1);
@@ -329,12 +338,16 @@ static void show_winner(ALLEGRO_DISPLAY *display,
 		0, "Red Wins!");
 	}
 	else return;
-	
+	/*
 	al_draw_text(font, AL_BLACK, 
 	50, 
 	al_get_display_height(display) - 50,
-	0, "Press R to play again");
-		
+	0, "Press R to play again, M to return to main menu");
+	*/
+	al_draw_multiline_text(font, AL_BLACK, 
+	50, al_get_display_height(display) - 50, 250, 0,
+     ALLEGRO_ALIGN_LEFT, "Press R to play again,\nM to return to main menu");
+	
 }
 
 static void show_current_player(ALLEGRO_DISPLAY *display, 
@@ -355,21 +368,139 @@ static void show_current_player(ALLEGRO_DISPLAY *display,
 	}
 }
 
+
+struct menu_item {
+	const char *title;
+	bool selected;
+};
+
+#define START_MENU_ITEMS_NUM 2
+static struct menu_item start_menu[START_MENU_ITEMS_NUM] = {
+	{.title = "Start", .selected = true},
+	{.title = "Quit", .selected = false}
+};
+
+#define BORDER_SIZE_MENU_ITEMS_NUM 4
+static struct menu_item border_size_menu[BORDER_SIZE_MENU_ITEMS_NUM] = {
+	{.title = "11x11", .selected = true},
+	{.title = "13x13", .selected = false},
+	{.title = "14x14", .selected = false},
+	{.title = "19x19", .selected = false}
+};
+
+#define MENUITEM_WIDTH 250
+#define MENUITEM_HEIGHT 50
+#define MENUITEM_MARGIN 50
+/*#define Y1_OFFSET(height, items_num) \
+(((height) - (MENUITEM_MARGIN)) / ((MENUITEM_MARGIN + MENUITEM_HEIGHT) / items_num))
+*/
+#define Y1_OFFSET(height, items_num) \
+((height) - ((MENUITEM_MARGIN + MENUITEM_HEIGHT) * (items_num + 1)))
+
+
+#define MENUITEM_X1(width) ((width) / 2 - MENUITEM_WIDTH/2) 
+#define MENUITEM_Y1(y1_offset) ((y1_offset) + MENUITEM_MARGIN)
+#define MENUITEM_X2(width) ((width) / 2 + MENUITEM_WIDTH/2) 
+#define MENUITEM_Y2(y1_offset) (MENUITEM_Y1(y1_offset) + MENUITEM_HEIGHT) 
+
+static void show_menu(ALLEGRO_DISPLAY *display, ALLEGRO_FONT *font,
+					  struct menu_item *menu, size_t items_num) {
+	
+	const float width = (float)al_get_display_width(display);
+	const float height = (float)al_get_display_height(display);
+	float y1_offset = Y1_OFFSET(height, items_num);
+	for(size_t i = 0; i < items_num; i++) {
+		
+		if(!menu[i].selected) {
+			al_draw_rectangle(MENUITEM_X1(width), MENUITEM_Y1(y1_offset), 
+			MENUITEM_X2(width), MENUITEM_Y2(y1_offset),
+			AL_BLACK, 1);
+		}
+		else {
+			al_draw_rectangle(MENUITEM_X1(width), MENUITEM_Y1(y1_offset), 
+			MENUITEM_X2(width), MENUITEM_Y2(y1_offset),
+			AL_RED, 1);
+		}
+		al_draw_text(font,
+		AL_BLACK, width/2, MENUITEM_Y1(y1_offset) + 12.5f, ALLEGRO_ALIGN_CENTRE,
+		menu[i].title);
+		
+		//y1_offset = y1_offset + MENUITEM_MARGIN + (i+1)*MENUITEM_HEIGHT;
+		 y1_offset = MENUITEM_Y2(y1_offset);
+		
+	}
+}
+
+static size_t get_menuitem_index_from_mouse_coordinates(ALLEGRO_DISPLAY *display,
+													  struct menu_item *menu, 
+													  size_t items_num,
+													  int x, int y) {
+	
+	const float width = (float)al_get_display_width(display);
+	if(x < MENUITEM_X1(width) || x > MENUITEM_X2(width)) return (size_t)-1;
+	const float height = (float)al_get_display_height(display);
+	//float y1_offset = Y1_OFFSET(height);
+	float y1_offset = Y1_OFFSET(height, items_num);
+	
+	for(size_t i = 0; i < items_num; i++) {
+		
+		if(y >= MENUITEM_Y1(y1_offset) && y <= MENUITEM_Y2(y1_offset)) return i;
+		
+		//y1_offset = y1_offset + MENUITEM_MARGIN + (i+1)*MENUITEM_HEIGHT;
+		y1_offset = MENUITEM_Y2(y1_offset);
+	}
+	return (size_t)-1;
+}
+
 struct hexgame_state {
 	unsigned short redraw : 1;
 	unsigned short reset : 1;
 	unsigned short paused : 1;
-	unsigned short game_ended : 1;
+	unsigned short game_started : 1;
 	unsigned short fullscreen : 1;
+	unsigned short show_menu : 1;
+	unsigned short show_boardsize_menu : 1;
+	size_t user_chosen_border_size;
 };
 
 #define HEXGAME_FLAG_ON(flags, member) ((flags).member = ~((flags).member ^ (flags).member))
 #define HEXGAME_FLAG_OFF(flags, member) ((flags).member = ((flags).member ^ (flags).member))
 #define HEXGAME_FLIP_FLAG(flags, member) ((flags).member = ~(flags).member)
 
+void main_menu_button_clicked(struct hexgame_state *game, size_t i) {
+	
+	if(i == 0) { // show border_size_menu
+		HEXGAME_FLAG_ON(*game, show_boardsize_menu);
+		HEXGAME_FLAG_OFF(*game, show_menu);
+		HEXGAME_FLAG_OFF(*game, game_started);
+	}
+	else if(i == 1) exit(0);
+}
+
+void border_size_menu_button_clicked(struct hexgame_state *game, size_t i) {
+	
+	if(i == 0) {
+		game->user_chosen_border_size = 11;
+	}
+	if(i == 1) {
+		game->user_chosen_border_size = 13;
+	}
+	if(i == 2) {
+		game->user_chosen_border_size = 14;
+	}
+	if(i == 3) {
+		game->user_chosen_border_size = 19;
+	}
+	HEXGAME_FLAG_OFF(*game, show_boardsize_menu);
+	HEXGAME_FLAG_ON(*game, game_started);
+	HEXGAME_FLAG_ON(*game, reset);
+}
+
 
 int main(void) {
-
+	
+	//setbuf(stdout, NULL);
+	
 	al_init();
 	al_init_primitives_addon();
 	al_install_keyboard();
@@ -405,8 +536,14 @@ int main(void) {
 	memset(&game_state, 0, sizeof(game_state));
 	HEXGAME_FLAG_ON(game_state, redraw);
 	HEXGAME_FLAG_ON(game_state, reset);
+	HEXGAME_FLAG_ON(game_state, show_menu);
+	
 	
 	cell_color winner = NEUTRAL;
+	//size_t user_chosen_border_size = 11;
+	size_t main_menu_highlighted_item = 0;
+	size_t border_size_menu_highlighted_item = 0;
+	
 	
 	al_start_timer(timer);
 	
@@ -439,11 +576,87 @@ int main(void) {
 				event.keyboard.keycode == ALLEGRO_KEY_R)
 		{
 			HEXGAME_FLAG_ON(game_state, reset);
+			HEXGAME_FLAG_ON(game_state, game_started);
 		}
+		else if(event.type == ALLEGRO_EVENT_KEY_DOWN &&
+				event.keyboard.keycode == ALLEGRO_KEY_M)
+		{
+			HEXGAME_FLAG_ON(game_state, show_menu);
+			
+		}
+		else if(event.type == ALLEGRO_EVENT_KEY_DOWN &&
+				  (event.keyboard.keycode == ALLEGRO_KEY_LEFT ||
+				   event.keyboard.keycode == ALLEGRO_KEY_RIGHT ||
+				   event.keyboard.keycode == ALLEGRO_KEY_UP ||
+				   event.keyboard.keycode == ALLEGRO_KEY_DOWN
+				  )
+				 )
+		{
+			if(game_state.show_menu) {
+				if(event.keyboard.keycode == ALLEGRO_KEY_UP) {
+					start_menu[main_menu_highlighted_item].selected = false;
+					main_menu_highlighted_item = (main_menu_highlighted_item-1) % START_MENU_ITEMS_NUM;
+					start_menu[main_menu_highlighted_item].selected = true;
+				}
+				else if(event.keyboard.keycode == ALLEGRO_KEY_DOWN) {
+					start_menu[main_menu_highlighted_item].selected = false;
+					main_menu_highlighted_item = (main_menu_highlighted_item+1) % START_MENU_ITEMS_NUM;
+					start_menu[main_menu_highlighted_item].selected = true;
+				}
+			}
+			else if(game_state.show_boardsize_menu) {
+				if(event.keyboard.keycode == ALLEGRO_KEY_UP) {
+					border_size_menu[border_size_menu_highlighted_item].selected = false;
+					border_size_menu_highlighted_item = (border_size_menu_highlighted_item-1) % BORDER_SIZE_MENU_ITEMS_NUM;
+					border_size_menu[border_size_menu_highlighted_item].selected = true;
+				}
+				else if(event.keyboard.keycode == ALLEGRO_KEY_DOWN) {
+					border_size_menu[border_size_menu_highlighted_item].selected = false;
+					border_size_menu_highlighted_item = (border_size_menu_highlighted_item+1) % BORDER_SIZE_MENU_ITEMS_NUM;
+					border_size_menu[border_size_menu_highlighted_item].selected = true;
+				}
+			}
+		}
+		else if(event.type == ALLEGRO_EVENT_KEY_DOWN &&
+				event.keyboard.keycode == ALLEGRO_KEY_ENTER)
+		{
+			if(game_state.show_menu) {
+				main_menu_button_clicked(&game_state, main_menu_highlighted_item);
+			}
+			else if(game_state.show_boardsize_menu) {
+				border_size_menu_button_clicked(&game_state, border_size_menu_highlighted_item);
+			}
+		}
+		
 		else if(event.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN &&
 				event.mouse.button == 1)
 		{
-			if(!game_state.game_ended) {
+			//printf("game_state.show_menu : %hu, x: %d , y: %d\n", game_state.show_menu, 
+			//event.mouse.x, event.mouse.y);						  
+				
+			if(game_state.show_menu) {
+				
+				size_t i = get_menuitem_index_from_mouse_coordinates(display,
+						  start_menu, 
+						  START_MENU_ITEMS_NUM,
+						  event.mouse.x, event.mouse.y);
+				if(i != (size_t)-1) {	
+					main_menu_button_clicked(&game_state, i);
+				}
+				
+			}
+			else if(game_state.show_boardsize_menu) {
+				
+				size_t i = get_menuitem_index_from_mouse_coordinates(display,
+						  border_size_menu, 
+						  BORDER_SIZE_MENU_ITEMS_NUM,
+						  event.mouse.x, event.mouse.y);
+				if(i != (size_t)-1) {
+					border_size_menu_button_clicked(&game_state, i);
+				}
+			}
+			
+			else if(game_state.game_started) {
 				//printf("left mouse button clicked on x: %d , y: %d\n", event.mouse.x, event.mouse.y);
 				size_t i = get_cell_index_from_mouse_coordinates(display, &def_grid, 
 						event.mouse.x, event.mouse.y);			
@@ -452,11 +665,11 @@ int main(void) {
 					winner = get_winner(&def_grid);
 					if(winner == RED) {
 						//puts("- red wins!");
-						HEXGAME_FLAG_ON(game_state, game_ended);
+						HEXGAME_FLAG_OFF(game_state, game_started);
 					}
 					else if(winner == BLUE) {
 						//puts("- blue wins!");
-						HEXGAME_FLAG_ON(game_state, game_ended);
+						HEXGAME_FLAG_OFF(game_state, game_started);
 					}
 				}
 			}
@@ -465,16 +678,36 @@ int main(void) {
 		if(game_state.redraw && al_is_event_queue_empty(queue))
 		{
 			if (game_state.reset) {
-				hex_def_grid_init();
+				if(game_state.game_started) {
+					
+					//printf("BEFORE: def_grid.size = %zu\n", def_grid.size);
+					def_grid.size = game_state.user_chosen_border_size;
+					//printf("AFTER: def_grid.size = %zu\n", def_grid.size);
+				
+					hex_def_grid_init();
+					winner = NEUTRAL;
+					current_color = HEXGAME_FIRST_PLAYER;
+				}
 				HEXGAME_FLAG_OFF(game_state, reset);
-				HEXGAME_FLAG_OFF(game_state, game_ended);
-				winner = NEUTRAL;
-				current_color = HEXGAME_FIRST_PLAYER;
 			}
 			al_clear_to_color(AL_WHITE);
-			hex_grid_draw(display, &def_grid);
-			show_current_player(display, font, current_color);
-			show_winner(display, font, font_big, winner);
+			
+			if(game_state.show_menu) {
+				show_menu(display, font_big, start_menu, START_MENU_ITEMS_NUM);
+			}
+			else if(game_state.show_boardsize_menu) {
+				show_menu(display, font_big, border_size_menu, BORDER_SIZE_MENU_ITEMS_NUM);
+			}
+			else {
+				hex_grid_draw(display, &def_grid);
+				//hex_def_grid_draw(display, &def_grid, user_chosen_border_size);
+				show_current_player(display, font, current_color);
+				if(!game_state.game_started) {
+					show_winner(display, font, font_big, winner);
+				}
+				
+			}
+			
 			al_flip_display();
 			HEXGAME_FLAG_OFF(game_state, redraw);
 		}
