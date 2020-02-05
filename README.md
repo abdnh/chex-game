@@ -14,3 +14,7 @@ chex-game ("[the hex board game](https://en.wikipedia.org/wiki/Hex_(board_game))
 * Font is taken from https://www.dafont.com/vcr-osd-mono.font
 * The [Allegro](https://liballeg.org/) game programming library
 * This [coursera course](https://www.coursera.org/learn/algorithms-part1/) about algorithms and data structures
+
+## Screenshots:
+![Screenshot 1](shot1.png)
+![Screenshot 2](shot2.png)
