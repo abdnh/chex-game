@@ -1,5 +1,4 @@
 #include <stdlib.h>
-//#include <stdio.h>
 #include <math.h>
 #include <string.h>
 #include <stdbool.h>
@@ -262,7 +261,7 @@ static size_t get_cell_index_from_mouse_coordinates(ALLEGRO_DISPLAY *display,
 	size_t i = (size_t) llroundf(i_f);
 	float j_f = ((float)x - h_offset - (cell_width)/2.0f * i_f) / CELL_X(0, cell_width, 0, 1);
 	size_t j = (size_t) llroundf(j_f);
-	//printf("i_f : %f , j_f : %f , i : %zu , j : %zu\n", i_f, j_f, i, j);
+	
 	if(i < g->size && j < g->size) {
 		return i * g->size + j;
 	}
@@ -279,7 +278,6 @@ static void open_cell(struct hexgame *game, hex_grid *g, size_t i) {
 	
 	size_t x = i % g->size;
 	size_t y = i / g->size;
-	//printf("- opening cell[%zu] (%zu, %zu)\n", i, x, y);
 	g->cells[i].color = game->current_player;
 	
 	
@@ -296,8 +294,6 @@ static void open_cell(struct hexgame *game, hex_grid *g, size_t i) {
 		   g->cells[neighbors[n]].color == g->cells[i].color)
 		{
 			w_quickunion_union(&g->disjoint_set, neighbors[n], i);
-			//printf("- connecting (%zu, %zu) with neighbors[%zu] (%zu, %zu)\n", 
-			//x, y, n, neighbors[n]%g->size, neighbors[n]/g->size);
 		}
 	}
 	
@@ -305,23 +301,18 @@ static void open_cell(struct hexgame *game, hex_grid *g, size_t i) {
 	size_t blue_idx = BLUE_VIRTUAL_CELLS_START(g);
 	
 	if(y == 0 && game->current_player == RED) { // upper
-		//printf("- connecting (%zu, %zu) with upper red corner\n", x, y);
 		w_quickunion_union(&g->disjoint_set, red_idx, i);
 	}
 	else if(y == (g->size - 1) && game->current_player == RED) { // lower
-		//printf("- connecting (%zu, %zu) with lower red corner\n", x, y);
 		w_quickunion_union(&g->disjoint_set, red_idx+1, i);
 	}
 	else if(x == 0 && game->current_player == BLUE) { // left
-		//printf("- connecting (%zu, %zu) with left blue corner\n", x, y);
 		w_quickunion_union(&g->disjoint_set, blue_idx, i);
 	}
 	else if(x == (g->size-1) && game->current_player == BLUE) { // right
-		//printf("- connecting (%zu, %zu) with right blue corner\n", x, y);
 		w_quickunion_union(&g->disjoint_set, blue_idx+1, i);
 	}
 	
-	// change current player
 	game->current_player = 1 + (game->current_player % 2);
 	
 }
@@ -339,17 +330,12 @@ static void show_winner(struct hexgame *game, ALLEGRO_DISPLAY *display,
 						ALLEGRO_FONT *font, 
 						ALLEGRO_FONT *font_big) {
 	
-	if(game->winner == BLUE) {
+	static char *msg[3] = {[RED] = "Red Wins!", [BLUE] = "Blue Wins!"};
+	if(game->winner != NEUTRAL) {
 		al_draw_text(font_big, AL_BLUE, 
 		50, 
 		al_get_display_height(display) - 100,
-		0, "Blue Wins!");
-	}
-	else if(game->winner == RED) {
-		al_draw_text(font_big, AL_RED, 
-		50, 
-		al_get_display_height(display) - 100,
-		0, "Red Wins!");
+		0, msg[game->winner]);
 	}
 	else return;
 	
